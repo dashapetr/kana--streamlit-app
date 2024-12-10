@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="Kana to romaji",
     page_icon=":sa:")
 
-st.title("📝 Welcome to kana app!")
+st.title("📝 Welcome to kana streamlit_app!")
 st.subheader("Use this page to practice kana reading!")
 st.divider()
 

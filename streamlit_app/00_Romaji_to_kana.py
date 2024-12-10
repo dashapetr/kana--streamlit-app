@@ -5,6 +5,7 @@ from manga_ocr import MangaOcr
 import os
 from streamlit_drawable_canvas import st_canvas
 from config import ALL_ROMAJI, CHECK_KANA_DICT
+from huggingface_hub import snapshot_download
 
 
 def change_romaji():
@@ -18,6 +19,13 @@ def change_mode(new_mode):
     return
 
 
+def download_model():
+    model_dir = "/models/manga-ocr"
+    if not os.path.exists(model_dir):
+        snapshot_download(repo_id="TareHimself/manga-ocr-base", local_dir=model_dir)
+    return model_dir
+
+
 def recognize_character(mocr):
     img = Image.open(os.getcwd()+"\\result.png")
     text = mocr(img)
@@ -28,14 +36,14 @@ st.set_page_config(
         page_title="Romaji to kana",
         page_icon=":sa:")
 
-st.title("📝 Welcome to kana app!")
+st.title("📝 Welcome to kana streamlit_app!")
 st.subheader("Use this page to practice kana writing!")
 st.divider()
 
 if 'mode' not in st.session_state:
     st.session_state.mode = None
 if 'mocr' not in st.session_state:
-    st.session_state.mocr = MangaOcr(pretrained_model_name_or_path=os.getenv("MANGA_OCR_PRETRAINED_MODEL_PATH"))
+    st.session_state.mocr = MangaOcr(pretrained_model_name_or_path=download_model())
 
 new_mode = st.radio(
     "What type of kana do you want to practice?",
