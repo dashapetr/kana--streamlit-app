@@ -1,0 +1,4 @@
+manga_ocr==0.1.13
+Pillow==11.0.0
+streamlit==1.40.2
+streamlit_drawable_canvas==0.9.3

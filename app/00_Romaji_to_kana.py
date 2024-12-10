@@ -35,7 +35,7 @@ st.divider()
 if 'mode' not in st.session_state:
     st.session_state.mode = None
 if 'mocr' not in st.session_state:
-    st.session_state.mocr = MangaOcr(pretrained_model_name_or_path=r"C:\\Program Files\\manga-ocr\\manga-ocr-base")
+    st.session_state.mocr = MangaOcr(pretrained_model_name_or_path=os.getenv("MANGA_OCR_PRETRAINED_MODEL_PATH"))
 
 new_mode = st.radio(
     "What type of kana do you want to practice?",
