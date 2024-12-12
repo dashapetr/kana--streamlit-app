@@ -1,11 +1,11 @@
 from aws_cdk import (
     aws_ec2 as ec2,
-    aws_autoscaling as autoscaling,
     aws_ecs as ecs,
     aws_ecs_patterns as ecs_patterns,
     aws_iam as iam
 )
 import aws_cdk as core
+from config import cpu, memory
 
 
 class CdkStack(core.Stack):
@@ -18,44 +18,13 @@ class CdkStack(core.Stack):
         # Create ECS cluster
         cluster = ecs.Cluster(self, "StreamlitKanaCluster", vpc=vpc)
 
-        # ECS optimized AMI
-        ecs_optimized_image = ecs.EcsOptimizedImage.amazon_linux2()
-
+        # Create IAM Role with least privilege
         role = iam.Role(
             self, "InstanceRole",
             assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonECS_FullAccess")
+                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonEC2ContainerServiceforEC2Role")
             ]
-        )
-
-        # Define a launch template for the Auto Scaling Group
-        launch_template = ec2.LaunchTemplate(
-            self,
-            "LaunchTemplate",
-            instance_type=ec2.InstanceType("t3.medium"),
-            machine_image=ecs_optimized_image,
-            role=role,
-            user_data=ec2.UserData.custom(
-                f"#!/bin/bash\n"
-                f"echo ECS_CLUSTER={cluster.cluster_name} >> /etc/ecs/ecs.config\n"
-            ),
-        )
-
-        # Create an AutoScalingGroup using the launch template
-        asg = autoscaling.AutoScalingGroup(
-            self,
-            "AsgSpot",
-            vpc=vpc,
-            desired_capacity=2,
-            min_capacity=1,
-            max_capacity=5,
-            launch_template=launch_template,
-        )
-
-        # Attach IAM policy for ECS
-        asg.role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonECS_FullAccess")
         )
 
         # Build Dockerfile from local folder and push to ECR
@@ -63,15 +32,15 @@ class CdkStack(core.Stack):
 
         # Create Fargate service
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
-            self, "StreamlitKanaService",
+            self, "StreamlitKanaWebApp",
             cluster=cluster,  # ECS Cluster
-            cpu=2048,  # CPU for the Fargate service
+            cpu=cpu,  # CPU for the Fargate service
             desired_count=1,  # Number of tasks
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=image,
                 container_port=8501,  # Port for the container
             ),
-            memory_limit_mib=4096,  # Memory for the Fargate service
+            memory_limit_mib=memory,  # Memory for the Fargate service
             public_load_balancer=True,  # Expose load balancer to the public
         )
 
