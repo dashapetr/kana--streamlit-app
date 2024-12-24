@@ -5,7 +5,7 @@ from aws_cdk import (
     aws_iam as iam
 )
 import aws_cdk as core
-from config import cpu, memory
+from config import Config
 
 
 class CdkStack(core.Stack):
@@ -34,13 +34,13 @@ class CdkStack(core.Stack):
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self, "StreamlitKanaWebApp",
             cluster=cluster,  # ECS Cluster
-            cpu=cpu,  # CPU for the Fargate service
+            cpu=Config.CPU,  # CPU for the Fargate service
             desired_count=1,  # Number of tasks
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=image,
                 container_port=8501,  # Port for the container
             ),
-            memory_limit_mib=memory,  # Memory for the Fargate service
+            memory_limit_mib=Config.MEMORY,  # Memory for the Fargate service
             public_load_balancer=True,  # Expose load balancer to the public
         )
 
