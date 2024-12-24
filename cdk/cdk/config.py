@@ -1,2 +1,3 @@
-cpu = 2048
-memory = 4096
+class Config:
+    CPU = 2048
+    MEMORY = 4096
