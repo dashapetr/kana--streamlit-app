@@ -10,11 +10,15 @@ paste video
 
 ### 1- Learn kana characters:
 
-paste screenshot
+![](images/kana-app-learning.gif)
 
 ### 2 - Given romaji (pronunciation), write kana:
 
+![](images/kana-app-writing.gif)
+
 ### 3 - Given kana, transcribe it:
+
+![](images/kana-app-reading.gif)
 
 ## What is Streamlit?
 
@@ -22,8 +26,9 @@ Streamlit is an open-source Python library that makes it easy to create and shar
 
 ## What is Japanese kana?
 
-![](images/hiragana_katakana_kanji.png)
-[Image source](https://www.mlcjapanese.co.jp/hiragana_katakana.html)
+| ![](images/hiragana_katakana_kanji.png) | 
+|:--:| 
+| *[Image source](https://www.mlcjapanese.co.jp/hiragana_katakana.html)* |
 
 The modern Japanese writing system uses a combination of logographic kanji, which are adopted Chinese characters, and syllabic kana. 
 Kana itself consists of a pair of syllabaries: **hiragana**, used primarily for native or naturalized Japanese words and grammatical elements; 
@@ -41,3 +46,5 @@ and **katakana**, used primarily for foreign words and names, loanwords. Almost 
 Checkout the `deploy-https` branch
 
 ## Conclusion and more ideas
+
+## Issues I faced and what I learned
