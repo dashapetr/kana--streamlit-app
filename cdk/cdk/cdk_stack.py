@@ -6,10 +6,14 @@ from aws_cdk import (
     aws_certificatemanager as acm,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
-    aws_wafv2 as wafv2
+    aws_wafv2 as wafv2,
+    aws_route53 as route53,
+    aws_route53_targets as targets,
+    aws_elasticloadbalancingv2 as elbv2,
+    aws_secretsmanager as secretsmanager,
 )
 import aws_cdk as core
-from config import cpu, memory
+from config import Config
 
 
 class CdkStack(core.Stack):
@@ -37,7 +41,7 @@ class CdkStack(core.Stack):
         # HTTPS Certificate
         certificate = acm.Certificate(
             self, "Certificate",
-            domain_name="example.com",
+            domain_name="kana.example.com",
             validation=acm.CertificateValidation.from_dns()
         )
 
@@ -45,16 +49,53 @@ class CdkStack(core.Stack):
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self, "StreamlitKanaWebApp",
             cluster=cluster,  # ECS Cluster
-            cpu=cpu,  # CPU for the Fargate service
+            cpu=Config.CPU,  # CPU for the Fargate service
             desired_count=1,  # Number of tasks
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=image,
                 container_port=8501,  # Port for the container
             ),
-            memory_limit_mib=memory,  # Memory for the Fargate service
+            memory_limit_mib=Config.MEMORY,  # Memory for the Fargate service
             public_load_balancer=True,  # Expose load balancer to the public
             certificate=certificate,
             redirect_http=True
+        )
+
+        # Generate secure headers from Secrets Manager
+        custom_header_secret  = secretsmanager.Secret(
+            self, "CustomHeaderSecret",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_punctuation=True,
+                include_space=False,
+                password_length=32,
+                secret_string_template="{}",
+                generate_string_key="header_value"
+            )
+        )
+
+        # Restrict ALB Listener Rule to Requests with Custom Header
+        fargate_service.listener.add_action(
+            "RestrictToCustomHeader",
+            priority=1,
+            conditions=[
+                elbv2.ListenerCondition.http_header(
+                    name="X-Custom-Header",
+                    values=[custom_header_secret.secret_value_from_json("header_value").to_string()]
+                )
+            ],
+            action=elbv2.ListenerAction.forward(target_groups=[fargate_service.target_group])
+        )
+
+        # Default Action: Return 403 for Other Requests
+        fargate_service.listener.add_action(
+            "DefaultDenyAction",
+            priority=2,
+            conditions=[elbv2.ListenerCondition.path_patterns(["/*"])],
+            action=elbv2.ListenerAction.fixed_response(
+                status_code=403,
+                content_type="text/plain",
+                message_body="Access Denied"
+            )
         )
 
         # Setup task auto-scaling
@@ -110,14 +151,25 @@ class CdkStack(core.Stack):
                 origin=origins.LoadBalancerV2Origin(
                     fargate_service.load_balancer,
                     protocol_policy=cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
-                    http_port=80,
-                    https_port=443,
+                    custom_headers={"X-Custom-Header":
+                                        custom_header_secret.secret_value_from_json("header_value").to_string()}
                 ),
+                cache_policy=cloudfront.CachePolicy.CACHING_OPTIMIZED,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
                 viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             ),
-            domain_names=["example.com"],
+            domain_names=["kana.example.com"],
             certificate=certificate,
             enable_logging=True
+        )
+
+        # Add Route53 A Record
+        hosted_zone = route53.HostedZone.from_lookup(self, "HostedZone", domain_name="example.com")
+        route53.ARecord(
+            self, "KanaAppAliasRecord",
+            zone=hosted_zone,
+            target=route53.RecordTarget.from_alias(targets.CloudFrontTarget(cloudfront_distribution)),
+            record_name="kana"  # This will create the record 'kana.example.com'
         )
 
         # Add stack outputs
