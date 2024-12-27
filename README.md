@@ -1,8 +1,12 @@
 # Streamlit Kana app with AWS deployment
 
-Learn Japanese kana (Katakana, Hiragana) with this app!
+Learn Japanese kana (Katakana, Hiragana) with the help of a Streamlit app deployed on AWS!
 
-paste architecture
+![](images/simple-deploy-streamlit-app.png)
+
+## If you need deployment to HTTPS
+
+If you want to increase solution security, please use the [`deploy-https`](https://github.com/dashapetr/kana--streamlit-app/tree/deploy-https) branch.
 
 ## What possibilities does Kana app include?
 
@@ -40,10 +44,6 @@ and **katakana**, used primarily for foreign words and names, loanwords. Almost 
 ### 1- Create your Streamlit application
 
 ### 2 - Deploy your Streamlit app to AWS Fargate using AWS CDK
-
-## If you need deployment to HTTPS
-
-Checkout the `deploy-https` branch
 
 ## Conclusion and more ideas
 
