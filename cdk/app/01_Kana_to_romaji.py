@@ -48,10 +48,11 @@ if st.session_state.mode is not None:
 
     with st.form("my_form"):
         user_romaji = st.text_input("Write your romaji here", "")
+        user_romaji_lower_case = user_romaji.lower()
         submitted = st.form_submit_button("Submit")
         if submitted:
-            if CHECK_KANA_DICT.get(st.session_state.mode).get(user_romaji) == st.session_state.character:
-                st.success(f'Yes,   {st.session_state.character}   is "{user_romaji}"!', icon="✅")
+            if CHECK_KANA_DICT.get(st.session_state.mode).get(user_romaji_lower_case) == st.session_state.character:
+                st.success(f'Yes,   {st.session_state.character}   is "{user_romaji_lower_case}"!', icon="✅")
                 st.balloons()
             else:
-                st.error(f'No,   {st.session_state.character}   is NOT "{user_romaji}"!', icon="🚨")
+                st.error(f'No,   {st.session_state.character}   is NOT "{user_romaji_lower_case}"!', icon="🚨")
