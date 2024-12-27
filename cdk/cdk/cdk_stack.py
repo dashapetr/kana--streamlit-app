@@ -110,7 +110,7 @@ class CdkStack(core.Stack):
         # Add WAF Web ACL with default AWS Managed Rules
         waf = wafv2.CfnWebACL(
             self, "StreamlitKanaWAF",
-            scope="REGIONAL",
+            scope="CLOUDFRONT",
             default_action=wafv2.CfnWebACL.DefaultActionProperty(allow={}),
             visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                 cloud_watch_metrics_enabled=True,
@@ -137,13 +137,6 @@ class CdkStack(core.Stack):
             ]
         )
 
-        # Associate WAF with ALB
-        waf_association = wafv2.CfnWebACLAssociation(
-            self, "WafAssociation",
-            resource_arn=fargate_service.load_balancer.load_balancer_arn,
-            web_acl_arn=waf.attr_arn
-        )
-
         # Create CloudFront distribution
         cloudfront_distribution = cloudfront.Distribution(
             self, "StreamlitKanaCloudFront",
@@ -160,7 +153,8 @@ class CdkStack(core.Stack):
             ),
             domain_names=["kana.example.com"],
             certificate=certificate,
-            enable_logging=True
+            enable_logging=True,
+            web_acl_id=waf.attr_arn
         )
 
         # Add Route53 A Record
