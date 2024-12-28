@@ -41,7 +41,52 @@ and **katakana**, used primarily for foreign words and names, loanwords. Almost 
 
 ## Let's build!
 
+### Prerequisites
+
+- AWS Account
+- [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- Docker
+
+### Project structure
+
+```bash
+.
+├── README.md
+└── cdk
+    ├── app
+    │   ├── Dockerfile
+    │   ├── __init__.py
+    │   ├── config.py
+    │   ├── init_streamlit_app.py
+    │   ├── 000_Learn_Kana.py
+    │   ├── 00_Romaji_to_kana.py
+    │   ├── 01_Kana_to_romaji.py
+    │   ├── requirements.txt
+    │   └── img
+    │       ├── Hiragana.jpg
+    │       └── Katakana.jpg
+    ├── cdk
+    │   ├── __init__.py
+    │   ├── config.py
+    │   └── cdk_stack.py
+    ├── .gitignore
+    ├── app.py
+    ├── cdk.json
+    ├── requirements.txt
+    ├── setup.py
+    └── source.bat
+```
+
 ### 1- Create your Streamlit application
+
+#### What's inside streamlit app
+
+#### Test your application
+
+#### What's inside Dockerfile
+
+#### Build image and run locally for debugging
 
 ### 2 - Deploy your Streamlit app to AWS Fargate using AWS CDK
 
