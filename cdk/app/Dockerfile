@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt huggingface-hub
 
+# Preload the Hugging Face model
+RUN python preload_model.py
+
 # Expose Streamlit port
 EXPOSE 8501
 
