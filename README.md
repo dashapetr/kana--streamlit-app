@@ -10,7 +10,7 @@ If you want to increase solution security, please use the [`deploy-https`](https
 
 ## What possibilities does Kana app include?
 
-paste video
+[kana-app.mp4](images%2Fkana-app.mp4)
 
 ### 1- Learn kana characters:
 
