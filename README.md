@@ -84,7 +84,7 @@ and **katakana**, used primarily for foreign words and names, loanwords. Almost 
 0️⃣ Streamlit app starts from the `init_streamlit_app.py`. This simple module serves as an entrypoint for the Docker image. 
 From here, we have a 'roadmap' to 3 app pages:
 
-```
+```python
 pg = st.navigation([st.Page(page="000_Learn_Kana.py", url_path='Learn_Kana'),
                     st.Page(page="00_Romaji_to_kana.py", url_path='Romaji_to_kana'),
                     st.Page(page="01_Kana_to_romaji.py", url_path='Kana_to_romaji')])
@@ -92,7 +92,7 @@ pg = st.navigation([st.Page(page="000_Learn_Kana.py", url_path='Learn_Kana'),
 
 1️⃣ The first page `000_Learn_Kana.py` contains a simple mode switcher (Hiragana | Katakana):
 
-```
+```python
 st.session_state.study_mode = st.radio(
     "What type of kana do you want to learn?",
     ["Hiragana", "Katakana"],
@@ -101,7 +101,7 @@ st.session_state.study_mode = st.radio(
 ```
 Depending on the user choice, a relevant Kana image is displayed:
 
-```
+```python
 image_path = f"img/{st.session_state.study_mode}.jpg"
 try:
     st.image(image_path,
@@ -111,7 +111,7 @@ try:
 
 2️⃣ The second page `00_Romaji_to_kana.py` contains the same mode switcher functionality. When a user select mode, a random Kana pronunciation appears.
 There is a button to randomly select a new Kana pronunciation (this button don't change mode):
-```
+```python
 st.button("New character?", on_click=change_romaji)
 ```
 When a user changes mode, there is a force mode update inside `change_mode` function to make sure that the corresponding Kana is selected. 
@@ -120,7 +120,7 @@ The most important part is a drawable canvas from the `streamlit-drawable-canvas
 It is implemented inside `st.form` to avoid page reloading while drawing. 
 When a user has finished the drawing, they press form's "Submit" button:
 
-```
+```python
 submitted = st.form_submit_button("Submit")
     if submitted:
         # Save the user's drawing as an image
@@ -135,7 +135,7 @@ The drawing is saved as an image, and this image is being processed by an open s
 
 If the user result equals the actual Kana character, balloons are flying! 🎉
 
-```
+```python
 if CHECK_KANA_DICT.get(st.session_state.mode).get(st.session_state.romaji) == user_result:
             st.success(f'Yes,   {st.session_state.romaji}   is "{user_result}"!', icon="✅")
             st.balloons()
@@ -149,7 +149,7 @@ It has the mode switcher, New character button, and form to accept the user resp
 This time, there is no drawable canvas, because a user is supposed to write text (romaji, latin characters).
 The input is converted to lowercase to make it case-insensitive.
 
-```
+```python
 user_romaji = st.text_input("Write your romaji here", "")
 user_romaji_lower_case = user_romaji.lower()
 ```
@@ -188,7 +188,7 @@ $ streamlit run init_streamlit_app.py
 
 We are using an official lightweight Python image, then setting the working directory in the container, copying the app files into the container, 
 and installing system dependencies:
-```
+```dockerfile
 FROM python:3.11-slim
 WORKDIR /app
 COPY . .
@@ -198,7 +198,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 ```
 Next, we install Python dependencies, preload the Hugging Face model, expose Streamlit port, and finally run the app:
-```
+```dockerfile
 RUN pip install --no-cache-dir -r requirements.txt huggingface-hub
 RUN python preload_model.py
 EXPOSE 8501
