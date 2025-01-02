@@ -46,6 +46,26 @@ and **katakana**, used primarily for foreign words and names, loanwords. Almost 
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - Docker
 
+### TL;DR - quick deploy
+
+You can find the detailed deployment description below. But if you want to **deploy it quickly** (without testing Streamlit app locally), run the following commands in your terminal:
+
+```
+$ git clone https://github.com/dashapetr/kana--streamlit-app.git
+$ cd kana--streamlit-app/cdk/
+$ aws configure
+$ npm install -g aws-cdk
+$ python3 -m venv .env
+$ source .env/bin/activate
+$ pip install -r requirements.txt
+$ cdk bootstrap
+$ cdk synth
+$ cdk deploy
+```
+To delete the stack and all resources, run:
+```
+$ cdk destroy
+```
 ### Project structure
 
 ```bash
@@ -221,11 +241,131 @@ And if you open your browser and go to http://localhost:8501/, you should be abl
 
 ### 2 - Deploy your Streamlit app to AWS Fargate using AWS CDK
 
+#### Intro
+
+The [AWS Cloud Development Kit (AWS CDK)](https://docs.aws.amazon.com/cdk/v2/guide/home.html) is an open-source software development framework for defining cloud infrastructure in code and provisioning it through [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html).
+
+The AWS CDK supports TypeScript, JavaScript, Python, Java, C#, .Net, and Go. You can use any of these supported programming languages to define reusable cloud components known as constructs. You compose these together into stacks and apps. Then, you deploy your CDK applications to AWS CloudFormation to provision or update your resources.
+
+|         ![AWS CDK and CloudFormation](images/AppStacks.png)          |
+|:--------------------------------------------------------------------:| 
+| *[Image source](https://docs.aws.amazon.com/cdk/v2/guide/home.html)* |
+
+[AWS Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html) is a technology that you can use with [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html) to run containers without having to manage servers or clusters of Amazon EC2 instances. With AWS Fargate, you no longer have to provision, configure, or scale clusters of virtual machines to run containers. This removes the need to choose server types, decide when to scale your clusters, or optimize cluster packing.
+
+#### Set up your AWS credentials
+
+Assuming that you have cloned this repo (See the [Test your application](https://github.com/dashapetr/kana--streamlit-app/tree/main?tab=readme-ov-file#test-your-application) part), open your terminal and `cd` to kana--streamlit-app/cdk.
+```
+$ cd kana--streamlit-app/cdk
+```
+**Note:** Alternatively, if you are inside kana--streamlit-app/cdk/app, run in the following your terminal:
+```
+$ cd ..
+```
+Assuming that you have your [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed, you should make sure that your AWS credentials are properly set in your environment.
+
+Run the following in your terminal. When asked, add your access and secret keys. You can read more in this [User Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).
+```
+$ aws configure
+```
+#### Install the AWS CDK CLI (Command Line Interface)
+
+Use the Node Package Manager to install the CDK CLI. Inside your terminal, run the following:
+```
+$ npm install -g aws-cdk
+```
+Run the following command to verify a successful installation. The AWS CDK CLI should output the version number:
+```
+$ cdk --version
+```
+#### What's inside CDK part
+
+Our CDK app contains a single CDK stack. The CDK app instance is created using the [App](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.App.html) construct. The following is the code from the CDK application file `app.py`:
+```python
+from aws_cdk import App
+from cdk.cdk_stack import CdkStack
+
+app = App()
+CdkStack(app, "KanaStreamlitApp")
+
+app.synth()
+```
+The CDK stack is created using the [Stack](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.Stack.html) construct. The key components of the CDK stack code (located inside `cdk/cdk_stack.py`) are:
+
+- **VPC Creation**: Creates a new VPC (`StreamlitKanaVPC`) with up to 2 availability zones to host resources securely.
+- **ECS Cluster**: Sets up an ECS cluster (`StreamlitKanaCluster`) within the VPC to manage containerized services.
+- **IAM Role**: Configures a least-privilege IAM role (`InstanceRole`) for EC2 container service to ensure secure access.
+- **Docker Image Deployment**: Builds and deploys a Docker image from the local `app` folder to AWS ECR for use in the service.
+- **Fargate Service**: Provisions an Application Load Balanced Fargate Service (`StreamlitKanaWebApp`) with:
+  - Configurable CPU and memory limits (`Config.CPU` and `Config.MEMORY`).
+  - A public-facing load balancer.
+  - Container listening on port `8501`.
+- **Auto-Scaling**: Implements auto-scaling for the ECS tasks based on CPU utilization, with configurable cooldown periods.
+
+#### Python environment
+
+Now, let's create and activate the app's Python virtual environment and install the AWS CDK core dependencies. In your terminal, run:
+```
+$ python3 -m venv .env
+$ source .env/bin/activate
+$ pip install -r requirements.txt
+```
+**Note**:  On Windows, the second command typically will look like `.\env\Scripts\activate`. But we have the `source.bat` script that eliminates the need to change it.
+
+**Note 2**: If, for some reason, `python3 -m venv .env` command fails with *Python was not found...* error, you can run `python -m venv .env`. 
+Then go to your `.env\Scripts` folder and create a python3 batch file (`python3.bat`) with the following content:
+```batch
+@echo off
+python %*
+```
+Save the file and ensure it is in the same directory as `activate`.
+This will make python3 behave like python in the virtual environment, and you can run the following command `source .env/bin/activate` without any issues.
+
+#### Deploy
+
+Then you need to bootstrap the AWS environment that you configured earlier. This prepares your environment for CDK deployments. The CDK CLI will obtain environment information from your project. Run the following:
+```
+$ cdk bootstrap
+```
+![cdk bootstrap](images/bootstrap.png)
+
+After that, you prepare for deployment by synthesizing a CloudFormation template with the CDK CLI `cdk synth` command. This command performs basic validation of your CDK code, runs your CDK app, and generates a CloudFormation template from your CDK stack. 
+
+If you don't synthesize a template, the CDK CLI will automatically perform this step when you deploy. Run the following command:
+```
+$ cdk synth
+```
+If successful, the CDK CLI will output a YAML–formatted CloudFormation template to `stdout` and save a JSON–formatted template in the `cdk.out` directory of your project.
+
+Next, you use the CDK CLI `cdk deploy` command to deploy your CDK stack. This command retrieves your generated CloudFormation template and deploys it through AWS CloudFormation, which provisions your resources as part of a CloudFormation stack.
+
+Inside your terminal, run the following. Confirm changes if prompted:
+```
+$ cdk deploy
+```
+During deployment, the CDK CLI displays progress information as your stack is deployed. When complete, you can go to the [AWS CloudFormation console](https://console.aws.amazon.com/cloudformation/home) to view your `KanaStreamlitApp` stack.
+
+![cdk outputs](images/outputs.png)
+
+When deployment completes, the CDK CLI will provide outputs. Now when you open your browser and go to the `KanaStreamlitApp.StreamlitKanaWebAppServiceServiceURL`, you will see your application.
+
+Congrats! Your app is online! 🎉
+
+#### Delete your stack (optional)
+
+To delete your application, run the `cdk destroy` command and confirm your request to delete the application. This command deletes the CloudFormation stack associated with your CDK stack, which includes the resources you created.
+```
+$ cdk destroy
+```
+![cdk destroy](images/cdk-destroy.png)
+
 ## Conclusion
 
 ### Issues I faced and what I learned
 
-
+- Initially, the OCR model for Japanese characters recognition was loaded inside the streamlit page code. Even though the [streamlit cache](https://docs.streamlit.io/develop/concepts/architecture/caching) could be used to prevent the model reload each time the page reloads, I decided to preload the model during the Docker image build. That's how the `preload_model.py` script appeared.
+- When running the `preload_model.py` script during the Docker image build, you may face the SSL certificate issue. You would need either to provide your [HF token](https://huggingface.co/docs/hub/en/security-tokens), or use the `os.environ['REQUESTS_CA_BUNDLE']='path_to_your_certificate'` command in your code.
 
 ### Kudos and special thanks
 
@@ -238,4 +378,3 @@ And if you open your browser and go to http://localhost:8501/, you should be abl
 - The current app version supports simple Katakana and Hiragana, without dakuten and handakuten. Kanji are not included as well. To include all mentioned characters, more accurate model is required. Potentially, the [DaKanji-Single-Kanji-Recognition](https://github.com/CaptainDario/DaKanji-Single-Kanji-Recognition) repo can be used to achieve the goal.
 - You can enhance security by adding user authentication with [Amazon Cognito](https://aws.amazon.com/pm/cognito/).
 - AWS provides various services that can improve the security of this application. You could use AWS Shield for DDoS protection and Amazon GuardDuty for threats detection. Amazon Inspector performs security assessments. There are many more AWS services and best practices that can enhance security - refer to the [AWS Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/) and security best practices guidance for additional recommendations.
-- Regular rotation of secrets is recommended, can be configured additionally.
