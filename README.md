@@ -62,6 +62,11 @@ $ cdk bootstrap
 $ cdk synth
 $ cdk deploy
 ```
+When deployment completes, the CDK CLI will provide outputs. Now when you open your browser and go to the `KanaStreamlitApp.StreamlitKanaWebAppServiceServiceURL`, you will see your application.
+
+**Congrats! Your app is online!** 🎉
+
+**Optional:**
 To delete the stack and all resources, run:
 ```
 $ cdk destroy
