@@ -3,3 +3,4 @@ Pillow==11.0.0
 streamlit==1.40.2
 streamlit_drawable_canvas==0.9.3
 python-certifi-win32==1.6.1
+huggingface-hub==0.28.1
